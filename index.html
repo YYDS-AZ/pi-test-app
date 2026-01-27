@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>我的 Pi App 练手</title>
+
+  <!-- CSP meta 标签已包含，放宽 Pi Browser 限制 -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sdk.minepi.com https://wallet.pinet.com https://api.minepi.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.minepi.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://wallet.pinet.com https://api.minepi.com;">
+
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
 <body>
@@ -27,7 +31,7 @@
 
         const payment = await Pi.createPayment(paymentData, {
           onReadyForServerApproval: async (paymentId) => {
-            console.log('需要批准', paymentId);
+            console.log('需要批准 paymentId:', paymentId);
             try {
               const response = await fetch('/api/approve', {
                 method: 'POST',
@@ -37,7 +41,7 @@
               if (response.ok) {
                 console.log('后端批准成功');
               } else {
-                console.error('后端批准失败');
+                console.error('后端批准失败', await response.text());
               }
             } catch (err) {
               console.error('批准请求失败', err);
