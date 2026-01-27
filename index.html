@@ -1,11 +1,45 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-  <meta charset="UTF-8">
-  <title>我的 Pi App 练手</title>
-</head>
-<body>
-  <h1>Hello Pi Network! 这是练手页面</h1>
-  <p>后面会加 Pi SDK 登录/支付测试</p >
-</body>
-</html>
+<button onclick="createPayment()">发起一笔测试支付 (0.01 Pi)</button>
+
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<script>
+  async function createPayment() {
+    try {
+      const paymentData = {
+        amount: 0.01,  // 测试金额，单位 Pi（最小 0.01）
+        memo: "测试支付 - 练手 App",  // 备注，必填
+        metadata: { test: "sandbox" }  // 可选元数据
+      };
+
+      // 先 authenticate 获取 Pi 实例（如果没登录会弹窗）
+      const Pi = await Pi.authenticate(['payments'], onIncompletePaymentFound);
+
+      // 创建支付
+      const payment = await Pi.createPayment(paymentData, {
+        onReadyForServerApproval: function(paymentId) {
+          console.log('支付准备好服务器批准', paymentId);
+          // 这里可以发给你的后端批准（测试网可跳过或模拟）
+          // 实际生产需后端调用 Pi 的 approvePayment API
+        },
+        onReadyForServerCompletion: function(paymentId, txid) {
+          console.log('支付完成', txid);
+          alert('支付成功！交易 ID: ' + txid);
+        },
+        onCancel: function() { alert('支付取消'); },
+        onError: function(error, errorData) { 
+          console.error(error, errorData);
+          alert('支付失败: ' + error.message); 
+        }
+      });
+
+      console.log('创建支付成功', payment);
+    } catch (err) {
+      console.error(err);
+      alert('支付初始化失败: ' + err.message);
+    }
+  }
+
+  function onIncompletePaymentFound(payment) {
+    console.log('发现未完成支付', payment);
+    // 可选：处理未完成支付
+  }
+</script>
