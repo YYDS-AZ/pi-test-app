@@ -1,26 +1,28 @@
-<button onclick="testButton()">发起一笔测试支付 (0.01 Pi)</button>
+async function createPayment() {
+  try {
+    alert('开始初始化 Pi SDK');  // 测试执行到这里
+    await Pi.init({ version: "2.0", sandbox: true });
+    alert('Pi SDK 初始化成功');
 
-<script>
-  function testButton() {
-    alert('按钮被点击了！');  // 先测试 onclick 是否响应
-    createPayment();  // 再调用支付
+    alert('开始认证');
+    const scopes = ['username', 'payments', 'wallet_address', 'user_info'];
+    const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+    alert('认证成功！用户名: ' + auth.user.username);
+
+    // 支付部分保持不变
+    const paymentData = {
+      amount: 0.01,
+      memo: "测试支付 - 练手 App",
+      metadata: { test: "sandbox" }
+    };
+
+    const payment = await Pi.createPayment(paymentData, {
+      // ... (你的 onReadyForServerApproval 等回调)
+    });
+
+    alert('支付创建成功');
+  } catch (err) {
+    alert('支付失败: ' + err.message + '\n错误详情: ' + JSON.stringify(err));
+    console.error('支付流程完整错误', err);
   }
-
-  async function createPayment() {
-    try {
-      console.log('开始初始化 Pi SDK');
-      await Pi.init({ version: "2.0", sandbox: true });
-      console.log('Pi SDK 初始化成功');
-
-      console.log('开始认证');
-      const auth = await Pi.authenticate(['username', 'payments', 'wallet_address'], onIncompletePaymentFound);
-      console.log('认证成功', auth.user);
-
-      // 支付部分保持不变
-      // ... (你的 paymentData 和 Pi.createPayment 代码)
-    } catch (err) {
-      console.error('支付流程失败', err);
-      alert('支付失败: ' + err.message + '\n请检查 console');
-    }
-  }
-</script>
+}
