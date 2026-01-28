@@ -1,69 +1,26 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>我的 Pi App 练手</title>
+<button onclick="testButton()">发起一笔测试支付 (0.01 Pi)</button>
 
-  <!-- CSP meta 标签已包含，放宽 Pi Browser 限制 -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sdk.minepi.com https://wallet.pinet.com https://api.minepi.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.minepi.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://wallet.pinet.com https://api.minepi.com;">
+<script>
+  function testButton() {
+    alert('按钮被点击了！');  // 先测试 onclick 是否响应
+    createPayment();  // 再调用支付
+  }
 
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-</head>
-<body>
-  <h1>Hello Pi Network! 这是练手页面</h1>
-  <p>后面会加 Pi SDK 登录/支付测试</p >
+  async function createPayment() {
+    try {
+      console.log('开始初始化 Pi SDK');
+      await Pi.init({ version: "2.0", sandbox: true });
+      console.log('Pi SDK 初始化成功');
 
-  <button onclick="createPayment()">发起一笔测试支付 (0.01 Pi)</button>
+      console.log('开始认证');
+      const auth = await Pi.authenticate(['username', 'payments', 'wallet_address'], onIncompletePaymentFound);
+      console.log('认证成功', auth.user);
 
-  <script>
-    async function createPayment() {
-      try {
-        await Pi.init({ version: "2.0", sandbox: true });
-
-        const auth = await Pi.authenticate(['username', 'payments'], onIncompletePaymentFound);
-
-        const paymentData = {
-          amount: 0.01,
-          memo: "测试支付 - 练手 App",
-          metadata: { test: "sandbox" }
-        };
-
-        const payment = await Pi.createPayment(paymentData, {
-          onReadyForServerApproval: async (paymentId) => {
-            console.log('需要批准 paymentId:', paymentId);
-            try {
-              const response = await fetch('/api/approve', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ paymentId })
-              });
-              if (response.ok) {
-                console.log('后端批准成功');
-              } else {
-                console.error('后端批准失败', await response.text());
-              }
-            } catch (err) {
-              console.error('批准请求失败', err);
-            }
-          },
-          onReadyForServerCompletion: (paymentId, txid) => {
-            console.log('支付完成', txid);
-            alert('支付成功！交易 ID: ' + txid);
-          },
-          onCancel: () => alert('支付取消'),
-          onError: (error) => alert('支付失败: ' + error.message)
-        });
-
-        console.log('支付创建成功', payment);
-      } catch (err) {
-        alert('支付初始化失败: ' + err.message);
-      }
+      // 支付部分保持不变
+      // ... (你的 paymentData 和 Pi.createPayment 代码)
+    } catch (err) {
+      console.error('支付流程失败', err);
+      alert('支付失败: ' + err.message + '\n请检查 console');
     }
-
-    function onIncompletePaymentFound(payment) {
-      console.log('发现未完成支付', payment);
-    }
-  </script>
-</body>
-</html>
+  }
+</script>
