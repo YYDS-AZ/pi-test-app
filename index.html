@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的 Pi App 练手</title>
+
+  <!-- CSP 放宽 Pi Browser 限制 -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sdk.minepi.com https://wallet.pinet.com https://api.minepi.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.minepi.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://wallet.pinet.com https://api.minepi.com;">
+
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+</head>
+<body>
+  <h1>Hello Pi Network! 这是练手页面</h1>
+  <p>后面会加 Pi SDK 登录/支付测试</p >
+
+  <button onclick="testClick()">发起一笔测试支付 (0.01 Pi)</button>
+
+  <script>
+    function testClick() {
+      alert('按钮被点击了！开始支付流程...');
+      createPayment();
+    }
+
+    async function createPayment() {
+      try {
+        alert('开始初始化 Pi SDK');
+        await Pi.init({ version: "2.0", sandbox: true });
+        alert('Pi SDK 初始化成功');
+
+        alert('开始认证');
+        const scopes = ['username', 'payments', 'wallet_address', 'user_info'];
+        const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+        alert('认证成功！用户名: ' + auth.user.username);
+
+        const paymentData = {
+          amount: 0.01,
+          memo: "测试支付 - 练手 App",
+          metadata: { test: "sandbox" }
+        };
+
+        const payment = await Pi.createPayment(paymentData, {
+          onReadyForServerApproval: async (paymentId) => {
+            alert('需要批准 paymentId: ' + paymentId);
+            try {
+              const response = await fetch('/api/approve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ paymentId })
+              });
+              if (response.ok) {
+                alert('后端批准成功');
+              } else {
+                alert('后端批准失败');
+              }
+            } catch (err) {
+              alert('批准请求失败: ' + err.message);
+            }
+          },
+          onReadyForServerCompletion: (paymentId, txid) => {
+            alert('支付成功！交易 ID: ' + txid);
+          },
+          onCancel: () => alert('支付取消'),
+          onError: (error) => alert('支付失败: ' + error.message)
+        });
+
+        alert('支付创建成功');
+      } catch (err) {
+        alert('支付失败: ' + err.message + '\n错误详情: ' + JSON.stringify(err));
+      }
+    }
+
+    function onIncompletePaymentFound(payment) {
+      console.log('发现未完成支付', payment);
+    }
+  </script>
+</body>
+</html>
